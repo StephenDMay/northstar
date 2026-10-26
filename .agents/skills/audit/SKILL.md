@@ -11,7 +11,7 @@ Do not use TaskCreate, TaskUpdate, TaskGet, or TaskList tools.
 
 Determine which files to audit:
 - If `$ARGUMENTS` specifies a step number and `scratchpad/feature-spec.md` exists, read it and focus on files that step touches.
-- Otherwise find recently changed files with: `git diff --name-only HEAD~5..HEAD`
+- Otherwise audit what's on the current branch compared to main: committed changes from `git diff --name-only main...HEAD`, plus uncommitted changes from `git status --short`. Don't reach back past the merge base. Work that's already merged was audited on its own branch.
 
 For each package you will audit, read `<package>/DECISIONS.md` if it exists — these contain constraints and prior choices that code must not violate. Then scan `documents/decisions/` and read any files whose topic overlaps with the code under review.
 
@@ -114,6 +114,12 @@ For every finding, record the **exact file path and line number**.
 
 ---
 
+### Out of scope: missing test coverage
+
+Do not flag missing or absent unit tests as a finding, in any bucket. The workflow is audit → clean up code → write tests (`/utest`) — tests come after the audit, not as an audit output. Existing tests are fair game (a test that's wrong, flaky, or contradicts the code under review is a normal finding); the mere absence of a test is not.
+
+---
+
 ## 4. Build and lint
 
 Run the appropriate commands for the detected stack:
@@ -155,15 +161,9 @@ Format each finding exactly like this:
   Suggestion: Hoist the client to module or class scope and reuse it.
 ```
 
-## 6. Present findings
+## 6. Write audit report
 
-Present all findings to the developer, organised by bucket. For every Must Fix item, ask whether to fix it now or defer it.
-
-Do not write findings until the developer has reviewed them.
-
-## 7. Write audit report
-
-Write all findings to `scratchpad/audit-report.md` (overwrite on each run). Use this structure:
+Before presenting anything or asking about fixes, write all findings to `scratchpad/audit-report.md` (overwrite on each run) — this is the artifact the developer reads, reviews, approves, or edits. All items start unchecked at this point; nothing has been fixed yet. Use this structure:
 
 ```markdown
 # Audit Report — YYYY-MM-DD
@@ -192,7 +192,15 @@ Write all findings to `scratchpad/audit-report.md` (overwrite on each run). Use 
 - Lint: PASS / FAIL
 ```
 
-Mark items `[x]` if the developer confirmed to fix them during step 6; include a short note for deferred items.
+## 7. Present findings
+
+Point the developer to the report file just written (`scratchpad/audit-report.md`). Give a short summary — a sentence or two on what stood out — and the count of findings per bucket (N must fix, N should fix, N consider). Do not re-list the findings inline; the report already has them.
+
+For every Must Fix item, ask whether to fix it now or defer it.
+
+Do not touch any code until the developer has reviewed the report and responded.
+
+If the developer fixes, defers, or edits findings after this point, update `scratchpad/audit-report.md` to reflect the outcome: mark items `[x]` once actually fixed, and add a short note for deferred items. Treat the developer's edits to the file itself as authoritative — don't overwrite changes they made directly.
 
 ## 8. Record decisions
 
@@ -213,7 +221,7 @@ If no findings rise to the level of a constraint, skip this step entirely.
 
 ## 9. Upstream coherence check
 
-If `scratchpad/feature-spec.md` was read in step 1, use its `Roadmap Step:` header to load the corresponding roadmap file (e.g. `documents/roadmaps/data-ingestion.md`). Identify the remaining incomplete steps — those still marked `- [ ] complete`.
+If `scratchpad/feature-spec.md` was read in step 1, and the developer has responded to step 7's findings, use its `Roadmap Step:` header to load the corresponding roadmap file (e.g. `documents/roadmaps/data-ingestion.md`). Identify the remaining incomplete steps — those still marked `- [ ] complete`.
 
 Review the Must Fix findings against those remaining steps and the capability doc. Ask: does any finding contradict or materially change how a future roadmap step should be approached? Does it invalidate an assumption in the capability doc?
 

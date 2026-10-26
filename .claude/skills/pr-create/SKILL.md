@@ -4,7 +4,7 @@ description: >-
   Analyzes all commits on the current branch plus relevant chat context, then
   opens a GitHub pull request with a structured body. Use when the developer
   says '/pr-create' or asks to create a PR automatically.
-allowed-tools: Read, Glob, Grep, Bash(git status), Bash(git diff), Bash(git log), Bash(git branch), Bash(git rev-parse), Bash(git symbolic-ref), Bash(gh repo view), Bash(gh pr create), Bash(gh pr view), Bash(gh pr list), Bash(git push)
+allowed-tools: Read, Glob, Grep, Bash(git status), Bash(git diff), Bash(git log), Bash(git branch), Bash(git rev-parse), Bash(git symbolic-ref), Bash(gh repo view), Bash(gh pr create), Bash(gh pr view), Bash(gh pr list), Bash(git push), Bash(scripts/notify-discord.sh:*)
 ---
 
 You are a pull-request authoring agent. Analyze the full branch diff and relevant conversation context, draft a review-ready PR, push if needed, and open it on GitHub.
@@ -126,7 +126,32 @@ gh pr create --title "YOUR TITLE" --body-file scratchpad/pr-body.md
 
 Delete the temp body file after a successful create.
 
-## 5. Report back
+## 5. Notify Discord
+
+Post a message to the team Discord channel in this exact format:
+
+```
+{FirstName} made a pr:
+
+{brief plain english description}
+
+{url}
+```
+
+Get the author from `git config user.name` and use only their first name. `{brief plain english description}` is a plain-language 1–2 sentence summary of what the PR does (not the title verbatim — write it like you're telling a teammate, not labeling a diff).
+
+```bash
+FIRST_NAME="$(git config user.name | cut -d' ' -f1)"
+scripts/notify-discord.sh "${FIRST_NAME} made a pr:
+
+<1-2 sentence plain-language summary>
+
+${PR_URL}"
+```
+
+If `DISCORD_WEBHOOK_URL` isn't set, the script skips silently — don't treat that as a failure.
+
+## 6. Report back
 
 Return:
 

@@ -24,7 +24,7 @@ State what you read before continuing.
 
 ### 2. Load decisions context
 
-Scan `documents/decisions/` and read any files relevant to the capability. Check whether a DECISIONS.md already exists for the target package — if so, read it. Briefly state what was loaded ("Read: module-and-driver.md") before continuing.
+Scan `documents/decisions/` and read any files relevant to the capability. Check whether a DECISIONS.md already exists for the target package — if so, read it. Briefly state what was loaded ("Read: tech-stack.md") before continuing.
 
 ### 3. Ask if there are supporting notes
 
@@ -101,6 +101,8 @@ If nothing conflicts, state that clearly. Do not manufacture amendments.
 ### 10. Update the roadmap
 
 In `documents/roadmaps/[capability-name].md`, find the `## Foundation` step and flip its `- [ ] complete` to `- [x] complete`.
+
+Then open `documents/roadmaps/master.md` and search for a line referencing "[Capability Name] Foundation". If found, flip `- [ ]` to `- [x]`. Master may abbreviate long capability names — match on the obvious short form too. If no matching line exists, skip silently.
 
 ## Output
 
