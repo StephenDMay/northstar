@@ -1,6 +1,6 @@
 # Decision: Development Workflow
 
-These come with the harness. Change them here if your project works differently, and update the skills to match.
+These come with Northstar. Change them here if your project works differently, and update the skills to match.
 
 ## Bugs live in `documents/bugs.md`, not an issue tracker
 

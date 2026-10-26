@@ -1,6 +1,6 @@
-# Harness
+# Northstar
 
-Harness is a set of Claude Code skills and document conventions for building software with AI agents. It covers the whole loop from product vision to merged PR.
+Northstar is a set of Claude Code skills and document conventions for building software with AI agents. It covers the whole loop from product vision to merged PR.
 
 ## Philosophy
 
@@ -10,7 +10,7 @@ The agent works with the developer instead of running on its own. Each step prod
 
 ### Keep cognitive debt low
 
-Cognitive debt builds up when decisions are made implicitly, scattered across conversations, or never written down. Harness keeps that knowledge in documents. Capability docs say what the system should do, roadmaps say in what order, and DECISIONS.md files say why the code looks the way it does. The agent reads these before touching anything, so each session starts from what's written down instead of piecing things together again.
+Cognitive debt builds up when decisions are made implicitly, scattered across conversations, or never written down. Northstar keeps that knowledge in documents. Capability docs say what the system should do, roadmaps say in what order, and DECISIONS.md files say why the code looks the way it does. The agent reads these before touching anything, so each session starts from what's written down instead of piecing things together again.
 
 ### Small, focused changes
 
