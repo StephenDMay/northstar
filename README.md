@@ -1,78 +1,74 @@
 # Harness
 
-A Claude Code SDLC workflow system — skills and document conventions for building software with AI agents.
+Harness is a set of Claude Code skills and document conventions for building software with AI agents. It covers the whole loop from product vision to merged PR.
 
 ## Philosophy
 
 ### Augment, don't automate
 
-The agent is a collaborator, not an autonomous executor. Every step in the workflow produces something the developer reviews before the next step begins — a capability doc before a roadmap, a spec before any code, findings before any fixes. The developer stays the decision-maker; the agent handles the mechanical work of drafting, searching, and writing.
+The agent works with the developer instead of running on its own. Each step produces something the developer reviews before the next one starts. A capability doc comes before its roadmap, a spec comes before any code, and audit findings come before any fixes. The developer makes the calls, and the agent does the drafting, searching, and writing.
 
 ### Keep cognitive debt low
 
-A codebase accumulates cognitive debt when decisions are made implicitly, spread across conversations, or never written down. Harness externalizes that debt into documents: capability docs capture *what* the system should do, roadmaps capture *in what order*, and DECISIONS.md files capture *why* the code is shaped the way it is. The agent reads these documents before touching anything, so each session starts from a known state rather than reconstructing it from scratch.
+Cognitive debt builds up when decisions are made implicitly, scattered across conversations, or never written down. Harness keeps that knowledge in documents. Capability docs say what the system should do, roadmaps say in what order, and DECISIONS.md files say why the code looks the way it does. The agent reads these before touching anything, so each session starts from what's written down instead of piecing things together again.
 
 ### Small, focused changes
 
-Every implementation step is scoped to a single roadmap entry — at most two files, roughly eight functions. A step that's larger gets split before speccing begins. This keeps diffs reviewable, keeps the blast radius of a bad decision small, and makes it easy to stop and course-correct without untangling accumulated work.
+Each spec covers a single roadmap step, and its size is measured in points. Every action item in the spec is one function, weighted by how much work it is: 1 for trivial, 2 for standard, 3 for new logic, and 5 for risky work like schema changes, concurrency, external APIs, or contracts between packages. The suggested max is 13 points. A step over that gets split into commit groups, or into separate roadmap steps if it's much larger. The developer can choose to go over.
 
-### Document alignment as a forcing function
+Points work better than a function count because a one-line field add and a schema migration aren't the same amount of work. Keeping specs small keeps diffs easy to review and makes it easy to stop and change course before too much work piles up.
 
-Documents aren't just reference material — they're a consistency check. When a spec contradicts a capability doc, or a decision contradicts the northstar, the workflow surfaces the conflict before any code is written. The agent is instructed to flag these conflicts rather than silently resolve them, keeping the developer in the loop on anything that would change the direction of the work.
+### Documents keep each other honest
 
----
+The documents also work as a consistency check. If a spec contradicts a capability doc, or a decision contradicts the northstar, the workflow raises it before any code gets written. The agent is told to flag these conflicts and let the developer decide, instead of quietly picking a side.
 
 ## Document structure
 
-The skills read and write a shared document convention:
+The skills read and write these documents:
 
-- `documents/northstar.md` — product vision, target users, non-negotiables, capability map
-- `documents/capabilities/` — one file per capability; functional requirements, data model, acceptance criteria
-- `documents/roadmaps/` — step-by-step implementation plans per capability; each step has a `- [ ] complete` checkbox the skills flip when done
-- `documents/roadmaps/master.md` — milestones that order steps across capabilities; mirrors per-capability status
-- `documents/bugs.md` — bug backlog (`B-NNN` entries); broken behavior only
-- `documents/ideas.md` — parked feature ideas
-- `documents/decisions/` — cross-cutting architectural decisions that apply project-wide
-- `<package>/DECISIONS.md` — code-level decisions local to a package: why a library was chosen, what constraints future code must not violate
+- `documents/northstar.md`: product vision, target users, non-negotiables, and the capability map
+- `documents/capabilities/`: one file per capability, with functional requirements, data model, and acceptance criteria
+- `documents/roadmaps/`: step-by-step plans per capability. Each step has a `- [ ] complete` checkbox that the skills flip when it's done.
+- `documents/roadmaps/master.md`: milestones that order steps across capabilities. It mirrors the status in the per-capability roadmaps.
+- `documents/bugs.md`: the bug backlog, with `B-NNN` entries. Broken behavior only.
+- `documents/ideas.md`: feature ideas parked for later
+- `documents/decisions/`: architectural decisions that apply to the whole project
+- `<package>/DECISIONS.md`: code-level decisions for one package, like why a library was chosen or what future code in it must not do
 
-Write a decision when a non-obvious choice was made between real alternatives, when a constraint exists that future code must not violate, or when a conversation drove toward a specific approach that could easily be undone by the next agent. If a conversation produces a key decision, record it before the session ends.
-
----
+Write a decision when you chose between real alternatives and the choice isn't obvious, when there's a constraint future code must respect, or when a conversation settled on an approach the next agent could easily undo. Record it before the session ends.
 
 ## Agent support
 
-Skills are authored once in `.claude/skills/<name>/SKILL.md` (the canonical source — includes Claude Code's `allowed-tools` permission scoping) and mirrored to `.agents/skills/<name>/SKILL.md` for Codex and other tools that follow the same emerging convention (frontmatter trimmed to `name`/`description`; body identical). `CLAUDE.md` and `AGENTS.md` carry the same project instructions for their respective tools.
+Skills live in `.claude/skills/<name>/SKILL.md`, which is the source of truth and includes Claude Code's `allowed-tools` permissions. They're mirrored to `.agents/skills/<name>/SKILL.md` for Codex and other tools that use that convention. `CLAUDE.md` and `AGENTS.md` hold the same project instructions for each tool.
 
-If you edit a skill, update both copies — `.claude/skills` is the source of truth; `.agents/skills` drops the `allowed-tools` line and points any `.claude/skills/` paths at `.agents/skills/`.
+If you edit a skill, update both copies. The `.agents` copy drops the `allowed-tools` line and points any `.claude/skills/` paths at `.agents/skills/`.
 
-Gemini CLI uses a different convention (`.gemini/commands/*.toml`) and isn't supported yet.
+Gemini CLI uses a different format (`.gemini/commands/*.toml`) and isn't supported yet.
 
 ## Skills
 
-Slash commands that run structured workflows in Claude Code (also available to Codex-style agents via `.agents/skills/`):
+These run as slash commands in Claude Code. Codex-style agents can use them through `.agents/skills/`.
 
 | Skill | Trigger | Purpose |
 |---|---|---|
-| `draft-northstar` | `/draft-northstar` | Define or refine the project vision document |
-| `draft-capability` | `/draft-capability` | Document a capability and generate its implementation roadmap |
-| `draft-foundation` | `/draft-foundation` | Drive the architectural design conversation before any code is written |
-| `draft-spec` | `/draft-spec` | Produce a function-scoped feature spec from a roadmap step |
-| `imp` | `/imp [step N]` | Implement the next unchecked spec step (or a given one) with review and progress tracking |
-| `audit` | `/audit` | Review recently changed code for correctness, conventions, and security |
-| `utest` | `/utest` | Propose and write unit tests one at a time with developer approval |
-| `pr-create` | `/pr-create` | Open a GitHub PR from the current branch with a structured description |
-| `pr-review` | `/pr-review [PR#\|branch]` | Run the build, linters, and full test suite, then review the diff |
-| `bug-report` | `/bug-report <what broke>` | Log a bug to `documents/bugs.md` fast — capture only |
-| `squash` | `/squash [N\|IDs\|capability]` | Triage open bugs and write one point-budgeted fix spec for `/imp` |
-| `ideas` | `/ideas` | Talk through feature ideas; route approved ones to roadmaps or park them |
-| `coherence` | `/coherence [full\|since <ref>\|capability]` | Check that docs, decisions, roadmaps, and code all agree |
-| `catchup` | `/catchup` | Summarize merged PRs over a time range into a quick catch-up report |
-
----
+| `draft-northstar` | `/draft-northstar` | Write or refine the project vision doc |
+| `draft-capability` | `/draft-capability` | Write a capability doc and its roadmap |
+| `draft-foundation` | `/draft-foundation` | Work through the architecture for a capability before any code |
+| `draft-spec` | `/draft-spec` | Turn a roadmap step into a point-sized spec |
+| `imp` | `/imp [step N]` | Implement the next unchecked spec item, or a specific one |
+| `audit` | `/audit` | Review the branch's changes for correctness, conventions, and security |
+| `utest` | `/utest` | Propose and write unit tests one at a time |
+| `pr-create` | `/pr-create` | Open a GitHub PR with a structured description |
+| `pr-review` | `/pr-review [PR#\|branch]` | Run the build, linters, and tests, then review the diff |
+| `bug-report` | `/bug-report <what broke>` | Quickly log a bug to `documents/bugs.md` |
+| `squash` | `/squash [N\|IDs\|capability]` | Triage open bugs and write a fix spec for `/imp` |
+| `ideas` | `/ideas` | Talk through feature ideas and file them in the right place |
+| `coherence` | `/coherence [full\|since <ref>\|capability]` | Check that docs, decisions, roadmaps, and code agree |
+| `catchup` | `/catchup` | Summarize recently merged PRs |
 
 ## Workflow
 
-Each phase feeds the next. Nothing is implemented without a spec; nothing is specced without a capability doc; nothing is merged without a review.
+The main path, in order:
 
 ```
 /draft-northstar        → documents/northstar.md
@@ -87,31 +83,29 @@ Each phase feeds the next. Nothing is implemented without a spec; nothing is spe
 /pr-review              → scratchpad/pr-review-report.md
 ```
 
-Side loops:
+Code gets written from a spec, specs come from a capability doc, and changes get reviewed before they merge.
+
+Other skills you'll use along the way:
 
 ```
 /bug-report             → documents/bugs.md
-/squash                 → scratchpad/feature-spec.md (bug spec) → /imp
+/squash                 → scratchpad/feature-spec.md (bug spec), then /imp
 /ideas                  → roadmap steps, capability stubs, or documents/ideas.md
 /coherence              → scratchpad/coherence-report.md
 /catchup                → scratchpad/catchup-report.md
 ```
 
-Specs are sized in points (1 trivial, 2 standard, 3 new logic, 5 risky); the suggested max is 13 per spec. `/imp` works through a spec one unchecked item at a time. See `documents/decisions/dev-workflow.md`.
-
----
+`documents/decisions/dev-workflow.md` explains why bugs, ideas, and spec points work the way they do.
 
 ## Setup
 
-1. Copy `.claude/` (and, if you use Codex or another `.agents/skills`-compatible tool, `.agents/`) plus `documents/` into your project root.
-2. Fill in `CLAUDE.md` (and `AGENTS.md`, if used) with your stack and project-specific conventions.
-3. Run `/draft-northstar` to create your vision document.
-4. Run `/draft-capability` to document a capability and generate its roadmap.
+1. Copy `.claude/` and `documents/` into your project root. If you use Codex or another tool that reads `.agents/skills`, copy `.agents/` too.
+2. Fill in `CLAUDE.md` (and `AGENTS.md`, if you use it) with your stack and conventions.
+3. Run `/draft-northstar` to write your vision doc.
+4. Run `/draft-capability` to write a capability and its roadmap.
 5. Set the current milestone in `documents/roadmaps/master.md`.
-6. Work through the roadmap: `/draft-foundation` → `/draft-spec` → `/imp` → `/audit` → `/utest` → `/pr-create`.
-
----
+6. Work through the roadmap with `/draft-foundation`, `/draft-spec`, `/imp`, `/audit`, `/utest`, and `/pr-create`.
 
 ## scratchpad/
 
-Working files (`feature-spec.md`, `audit-report.md`, `test-plan.md`, `action-items.md`, and the other skill reports) live here during active work and are excluded from git. They are per-session artifacts, not permanent records — the permanent record is the code and the documents.
+Working files like `feature-spec.md`, `audit-report.md`, `test-plan.md`, `action-items.md`, and the other skill reports live here and are kept out of git. They only matter while the work is in progress. The code and the documents are the lasting record.
