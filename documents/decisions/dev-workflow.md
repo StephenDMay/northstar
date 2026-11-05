@@ -37,3 +37,20 @@ Each spec action item gets a weight: 1 trivial, 2 standard, 3 new logic, 5 risky
 **Why:** A function count treats a one-line field add the same as a schema migration. Points track how dense a spec actually is.
 
 **Constraint:** The scale is defined once, in `.claude/skills/draft-spec/SKILL.md` step 3. `/squash` references it — change it there, not in copies.
+
+## Parallel roadmap work runs through `/fleet`
+
+**Decided:** 2026-11-05 (from ptcg-coach, where it started 2026-10-29)
+
+`/fleet` runs in a "hub" session. It picks open steps from the current milestone that don't share files, and starts one worker session per step — each in its own git worktree off `main`, in auto mode. Each worker runs the normal `/draft-spec` → `/imp` → `/pr-review` → `/pr-create` pipeline. `/fleet status` gives one table of all workers.
+
+**Why:** Running several steps by hand meant juggling branches and the shared `scratchpad/feature-spec.md`. Worktrees give each step its own folder, branch, and scratchpad, so they can't step on each other.
+
+**Constraints:**
+- At most 4 workers at once.
+- No two workers touch the same files. Shared hot spots (stores, router, migrations, agent tool registry) count as overlap.
+- Workers flip their own checkboxes (spec, capability roadmap, `master.md`) and commit them with the code. The hub checks the flips and the merge state before it lets a worker open its PR.
+- The hub merges the PRs, not the workers. Once every worker has a PR up and CI is green, it asks once whether to merge, then merges them one at a time. If a PR conflicts after the one before it lands, the hub merges `origin/main` into it in a throwaway worktree, keeps the `[x]` on checkbox-only conflicts, pushes, waits for CI, and merges. Any other conflict skips that PR and goes to the developer.
+- The hub symlinks the main checkout's `.env` and `.claude/settings.local.json` into each worktree at launch. Both are gitignored, so worktrees don't get them. Symlink, not copy, so there's one file of secrets. They must be linked before the worker starts, so on CLI the hub makes the worktree itself instead of `claude --bg -w`.
+- Design passes and capability drafts are not fleet work — they're conversations.
+- The hub picks a launcher at the start: desktop session tools, then herdr if the hub is inside herdr (`HERDR_ENV=1`), then plain CLI background sessions. Plan, the PR gate, and status work the same in all three; only launch, watching, and status differ.
