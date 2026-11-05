@@ -65,6 +65,7 @@ These run as slash commands in Claude Code. Codex-style agents can use them thro
 | `ideas` | `/ideas` | Talk through feature ideas and file them in the right place |
 | `coherence` | `/coherence [full\|since <ref>\|capability]` | Check that docs, decisions, roadmaps, and code agree |
 | `catchup` | `/catchup` | Summarize recently merged PRs |
+| `fleet` | `/fleet [status]` | Run several roadmap steps at once, each in its own worktree and session |
 
 ## Workflow
 
@@ -93,9 +94,10 @@ Other skills you'll use along the way:
 /ideas                  → roadmap steps, capability stubs, or documents/ideas.md
 /coherence              → scratchpad/coherence-report.md
 /catchup                → scratchpad/catchup-report.md
+/fleet                  → one worker session + PR per roadmap step, merged by the hub
 ```
 
-`documents/decisions/dev-workflow.md` explains why bugs, ideas, and spec points work the way they do.
+`documents/decisions/dev-workflow.md` explains why bugs, ideas, spec points, and `/fleet` work the way they do.
 
 ## Setup
 

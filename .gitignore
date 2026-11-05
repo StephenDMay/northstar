@@ -1,1 +1,4 @@
 scratchpad/*.md
+
+# Fleet worker worktrees
+.claude/worktrees/
